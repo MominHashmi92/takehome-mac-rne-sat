@@ -1,1 +1,11 @@
-test file
+## A. Root Cause Analysis — Task 5f436941
+
+**What the agent did wrong:** The agent's implementation adds an extra clock cycle of latency between `rd` and `res_valid`/`res`, so every readout lands one cycle late.
+
+The agent registers `rd` into an intermediate signal `rd_reg` (`rd_reg <= rd`), then gates the output registers off `rd_reg` instead of `rd` directly (`res_valid <= rd_reg`). Tracing it: if `rd=1` at cycle T, then `rd_reg` becomes 1 at cycle T+1 (visible after that edge), and `res_valid <= rd_reg` only fires at the edge closing T+1, so `res_valid` doesn't actually become 1 until cycle T+2 — not T+1 as required.
+
+This matches the grading log exactly: `[cyc 2] RNE +2.5 -> 2 res_valid mismatch: exp 1 got 0`. The reference model expects `res_valid=1` one cycle after `rd`; the DUT is still 0 because its real pulse doesn't land until the following cycle. Because this is a structural off-by-one, it also fails immediately in the randomized test at the very first `rd` (`[cyc 1] randA[0] res_valid mismatch`), so essentially the whole suite fails from the first readout onward.
+
+**Why it went wrong:** The agent's own final summary states: "Cycle T: rd=1, snapshot captures acc. Cycle T+1: rd_reg=1, res_valid=1." It believed adding the `rd_reg` staging register still produced one-cycle latency, but missed that `res_valid <= rd_reg` is itself a register write — so `rd_reg` being 1 during cycle T+1 only causes `res_valid` to become 1 at the next edge (T+2), not during T+1. The agent added an unnecessary synchronization register out of a general "register your inputs" instinct, without noticing this pushes every downstream signal one extra cycle later than the spec requires.
+
+The golden RTL avoids this by computing the rounded/saturated value combinationally from the *current* `acc` and gating the output register directly off the *current* `rd` — no staging register, so one register write is enough to land the result exactly one cycle later.
