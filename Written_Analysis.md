@@ -1,13 +1,3 @@
-# Section 7: Submission
-
-Once you have achieved a pass rate between 50% and 80%, email your liaison with:
-
-1. **Your GitHub repo link** with the final specification and golden RTL.
-   -  https://github.com/MominHashmi92/takehome-mac-rne-sat
-2. **Your HUD results link** showing the pass rate.
-   -  https://www.hud.ai/jobs/b2c5f725957f416c9261894aae573b2a
-3. **A written analysis**:
-
 ## Written Analysis
 Choosen Trace : Task 5f436941
 ### A. Root Cause Analysis
